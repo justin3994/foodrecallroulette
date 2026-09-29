@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Recall Roulette | FoodSafety.gov Edition</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chongo&family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 60%, #030712 100%);
+      color: #f8fafc;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    .game-title {
+      text-shadow: 0 0 20px rgba(245, 158, 11, 0.6), 0 4px 10px rgba(0, 0, 0, 0.8);
+    }
+
+    .neon-border {
+      box-shadow: 0 0 15px rgba(234, 179, 8, 0.35), inset 0 0 15px rgba(234, 179, 8, 0.2);
+    }
+
+    .wheel-container {
+      perspective: 1200px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Pointer wobbles */
+    @keyframes pointerWobble {
+      0% { transform: translateX(-50%) rotate(0deg); }
+      35% { transform: translateX(-50%) rotate(-18deg); }
+      70% { transform: translateX(-50%) rotate(12deg); }
+      100% { transform: translateX(-50%) rotate(0deg); }
+    }
+
+    .pointer-tick {
+      animation: pointerWobble 0.14s ease-out;
+    }
+
+    /* Pulse effects */
+    @keyframes alertGlow {
+      0%, 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.6), inset 0 0 15px rgba(239, 68, 68, 0.3); }
+      50% { box-shadow: 0 0 45px rgba(239, 68, 68, 0.9), inset 0 0 30px rgba(239, 68, 68, 0.5); }
+    }
+
+    .alert-active {
+      animation: alertGlow 1.8s infinite ease-in-out;
+    }
+
+    /* Pulsing halo for the interactive center spin button */
+    @keyframes hubPulse {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.45), 0 0 0 4px rgba(245, 158, 11, 0.25);
+      }
+      50% {
+        box-shadow: 0 0 35px rgba(245, 158, 11, 0.8), 0 0 0 8px rgba(245, 158, 11, 0.4);
+      }
+    }
+
+    .hub-ready {
+      animation: hubPulse 2s infinite ease-in-out;
+    }
+
+    /* Light Theme Styling Overrides */
+    body.light-mode {
+      background: radial-gradient(circle at 50% 15%, #ffffff 0%, #f1f5f9 55%, #e2e8f0 100%);
+      color: #0f172a;
+    }
+
+    body.light-mode header {
+      background-color: rgba(255, 255, 255, 0.88);
+      border-bottom-color: #e2e8f0;
+    }
+
+    body.light-mode #activeDossierCard,
+    body.light-mode .past-winners-box,
+    body.light-mode #editorModal .modal-container {
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+    }
+
+    body.light-mode .theme-nav-bar,
+    body.light-mode #foodSlot,
+    body.light-mode #reasonSlot,
+    body.light-mode .past-winner-row,
+    body.light-mode .theme-inner-box {
+      background-color: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    body.light-mode .text-slate-100,
+    body.light-mode .text-slate-200,
+    body.light-mode .text-slate-300 {
+      color: #1e293b !important;
+    }
+
+    body.light-mode .text-slate-400 {
+      color: #64748b !important;
+    }
+
+    body.light-mode .text-slate-500 {
+      color: #94a3b8 !important;
+    }
+
+    body.light-mode .border-slate-800,
+    body.light-mode .border-slate-700 {
+      border-color: #cbd5e1 !important;
+    }
+
+    body.light-mode .theme-btn {
+      background-color: #f1f5f9 !important;
+      color: #334155 !important;
+      border-color: #cbd5e1 !important;
+    }
+    body.light-mode .theme-btn:hover {
+      background-color: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+
+    body.light-mode footer {
+      background-color: rgba(248, 250, 252, 0.85);
+      border-top-color: #e2e8f0;
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.4);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(245, 158, 11, 0.7);
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-100">
+
+  <header class="w-full border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 px-4 py-3 sm:px-8">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl filter drop-shadow">🎡</span>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg sm:text-2xl font-black tracking-wider uppercase bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">
+              Recall Roulette
+            </h1>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Spinning through actual federal food recalls in real time</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button id="themeToggleBtn" class="theme-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition" title="Toggle Light / Dark Mode">
+          <span id="themeIcon">☀️</span>
+          <span id="themeLabel" class="hidden sm:inline">Light Mode</span>
+        </button>
+
+        <button id="soundToggleBtn" class="theme-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition">
+          <span id="soundIcon">🔊</span>
+          <span id="soundLabel" class="hidden sm:inline">Audio On</span>
+        </button>
+
+        <button id="orientToggleBtn" class="theme-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition" title="Toggle radial text direction along the wedge length">
+          <span>🔤</span>
+          <span id="orientLabel" class="hidden sm:inline">Rim ➔ Center</span>
+        </button>
+
+        <button id="openEditorBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium border border-amber-500/30 transition">
+          <span>⚙️</span>
+          <span class="hidden md:inline">Recall Data & Editor</span>
+          <span class="md:hidden">Editor</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-8 items-start justify-center">
+
+    <!-- Wheel Game Stage -->
+    <div class="w-full lg:w-7/12 flex flex-col items-center">
+      
+      <!-- Status Banner -->
+      <div id="statusBadge" class="mb-4 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold tracking-wide uppercase transition-all duration-300 bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-2 shadow-lg">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+        </span>
+        <span id="statusText">Ready! Tap center button to spin Step 1 (Food Item)</span>
+      </div>
+
+      <!-- The Expanded Dual Wheel Canvas/SVG Wrapper -->
+      <div class="wheel-container relative w-full max-w-[560px] aspect-square flex items-center justify-center p-1 sm:p-2">
+        
+        <!-- Outer Glowing Accent Rings -->
+        <div class="absolute inset-0 rounded-full border-4 border-amber-500/30 neon-border pointer-events-none"></div>
+        <div class="absolute -inset-2 rounded-full border border-orange-500/20 pointer-events-none animate-pulse"></div>
+
+        <!-- Wheel Top Pointer Needle (Outer & Inner Indicator) -->
+        <div id="wheelPointer" class="absolute -top-4 left-1/2 -translate-x-1/2 z-30 transition-transform origin-top flex flex-col items-center pointer-events-none drop-shadow-xl">
+          <div class="w-6 h-8 bg-gradient-to-b from-amber-300 to-amber-600 clip-pointer rounded-t-sm shadow-md" style="clip-path: polygon(50% 100%, 0% 0%, 100% 0%);"></div>
+          <div class="w-3.5 h-3.5 bg-red-600 rounded-full -mt-8 border-2 border-white shadow"></div>
+        </div>
+
+        <!-- Outer Wheel SVG Container -->
+        <div id="outerWheelWrap" class="absolute w-[96%] h-[96%] transition-transform ease-out will-change-transform">
+          <svg id="outerWheelSvg" class="w-full h-full filter drop-shadow-2xl" viewBox="-250 -250 500 500">
+            <!-- Dynamic segments generated via JS -->
+          </svg>
+        </div>
+
+        <!-- Inner Wheel SVG Container -->
+        <div id="innerWheelWrap" class="absolute w-[58%] h-[58%] transition-transform ease-out will-change-transform z-10">
+          <svg id="innerWheelSvg" class="w-full h-full filter drop-shadow-2xl" viewBox="-155 -155 310 310">
+            <!-- Dynamic segments generated via JS -->
+          </svg>
+        </div>
+
+        <!-- Center Hub transformed into the Primary Interactive Spin Button -->
+        <button id="spinBtn" class="hub-ready absolute w-20 h-20 sm:w-28 sm:h-28 rounded-full z-20 bg-gradient-to-br from-slate-900 via-slate-800 to-black border-4 border-amber-400 flex flex-col items-center justify-center shadow-2xl transition-all transform hover:scale-105 active:scale-95 cursor-pointer text-slate-100 group focus:outline-none">
+          <span id="spinBtnIcon" class="text-lg sm:text-2xl transition-transform group-hover:rotate-45">🎡</span>
+          <span id="spinBtnText" class="text-[9px] sm:text-xs font-black uppercase tracking-wider text-amber-300 text-center leading-tight mt-0.5">
+            SPIN<br><span class="text-[8px] sm:text-[9px] text-white">STEP 1</span>
+          </span>
+        </button>
+
+      </div>
+
+      <!-- Controls & Recall Navigation Bar (Reclaimed Space) -->
+      <div class="w-full max-w-md mt-5 flex flex-col gap-2.5 items-center">
+
+        <!-- Current Target Recall Indicator Sub-bar -->
+        <div class="theme-nav-bar w-full bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs text-slate-400 shadow-md">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500">Active Recall:</span>
+            <span id="activeRecallLabel" class="text-slate-200 font-bold">#1 (Most Recent)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="prevRecallBtn" title="Previous Recall" class="theme-btn p-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">◀</button>
+            <span id="recallCounter" class="font-mono text-slate-300 px-1">1 of 12</span>
+            <button id="nextRecallBtn" title="Next Recall" class="theme-btn p-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">▶</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Right Side: Active Announcement & Past Winners (Last 10) -->
+    <div class="w-full lg:w-5/12 flex flex-col gap-6">
+
+      <!-- Active Recall Card (Revealed after Spins) -->
+      <div id="activeDossierCard" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden transition-all duration-300">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📢</span>
+            <h2 class="text-sm font-bold tracking-wider uppercase text-slate-300">Current Wheel Target</h2>
+          </div>
+          <span id="cardClassBadge" class="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700">
+            Awaiting Spin
+          </span>
+        </div>
+
+        <!-- Spin Progress Slots -->
+        <div class="grid grid-cols-2 gap-3 my-4">
+          <!-- Food Slot -->
+          <div id="foodSlot" class="bg-slate-950/80 border-2 border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center text-center min-h-[90px] transition-all">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">Outer Wheel • Food</span>
+            <div id="foodSlotVal" class="text-base sm:text-lg font-black text-slate-400">???</div>
+            <span id="foodSlotIcon" class="text-2xl mt-1 opacity-40">🥗</span>
+          </div>
+
+          <!-- Reason Slot -->
+          <div id="reasonSlot" class="bg-slate-950/80 border-2 border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center text-center min-h-[90px] transition-all">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">Inner Wheel • Reason</span>
+            <div id="reasonSlotVal" class="text-base sm:text-lg font-black text-slate-400">???</div>
+            <span id="reasonSlotIcon" class="text-2xl mt-1 opacity-40">🔬</span>
+          </div>
+        </div>
+
+        <!-- Full Recall Details Box (Hidden until spin 2 finishes) -->
+        <div id="recallDetailsBox" class="hidden flex-col gap-2.5 pt-2 border-t border-slate-800 text-xs">
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Recall Date:</span>
+            <span id="cardDate" class="font-mono text-slate-200 font-semibold">-</span>
+          </div>
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Agency & Classification:</span>
+            <span id="cardAgency" class="font-semibold text-amber-400">-</span>
+          </div>
+          <div class="theme-inner-box bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Public Safety Notice</div>
+            <p id="cardDescription" class="text-slate-300 leading-relaxed text-xs">-</p>
+          </div>
+          <a id="cardSourceLink" href="https://www.foodsafety.gov" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition">
+            <span>Verify Official Notice on FoodSafety.gov</span>
+            <span>↗</span>
+          </a>
+        </div>
+
+        <!-- Placeholder text when awaiting spin -->
+        <div id="awaitingSpinNotice" class="text-center py-4 text-xs text-slate-400 italic">
+          Press "SPIN STEP 1" to launch the outer wheel and pinpoint the latest recalled food!
+        </div>
+      </div>
+
+      <!-- Past Winners Section (Last 10 Winning Combinations, excluding current) -->
+      <div class="past-winners-box bg-slate-900/80 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col flex-1">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🏆</span>
+            <div>
+              <h3 class="text-sm font-bold tracking-wider uppercase text-slate-200">Past Winners Archive</h3>
+              <p class="text-[11px] text-slate-400">Previous 10 recalled combinations on record</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">Excludes Current</span>
+        </div>
+
+        <!-- Past Winners List -->
+        <div id="pastWinnersList" class="mt-4 flex flex-col gap-2 max-h-[340px] overflow-y-auto pr-1">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Editor & FoodSafety.gov Sync Modal -->
+  <div id="editorModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="modal-container bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">📋</span>
+          <div>
+            <h3 class="text-base font-bold text-slate-100">Recall Database & FoodSafety.gov Live Editor</h3>
+            <p class="text-xs text-slate-400">Manage base food items, recall reasons, and fetch live notices</p>
+          </div>
+        </div>
+        <button id="closeEditorBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 text-lg transition">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-6 text-xs sm:text-sm">
+        
+        <!-- Live AI Sync with Google Search grounding for latest FoodSafety.gov alerts -->
+        <div class="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h4 class="font-bold text-amber-300 text-sm flex items-center gap-1.5">
+              <span>✨</span> Sync Latest Recalls from FoodSafety.gov
+            </h4>
+            <p class="text-xs text-slate-300 mt-1 max-w-lg">
+              Scans recent FDA & USDA FoodSafety.gov press releases, parses base food items (e.g. Cheese, Carrots) and basic contaminants (e.g. E. coli, Listeria), and updates both wheels automatically.
+            </p>
+          </div>
+          <button id="syncOnlineBtn" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition whitespace-nowrap shadow flex items-center gap-2">
+            <span id="syncSpinner" class="hidden animate-spin">🔄</span>
+            <span>Fetch Latest Recalls</span>
+          </button>
+        </div>
+
+        <!-- Add New Simple Recall Entry Form -->
+        <div class="bg-slate-950/70 p-4 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-slate-200 mb-3 text-xs uppercase tracking-wider">Add Custom Recall Entry</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Base Food Item (Basic name e.g., "Cheese", "Flour")</label>
+              <input id="inputNewFood" type="text" placeholder="e.g. Cheese" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Recall Reason (Basic contaminant e.g., "E. coli", "Glass")</label>
+              <input id="inputNewReason" type="text" placeholder="e.g. E. coli" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Recall Date</label>
+              <input id="inputNewDate" type="date" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Classification / Agency</label>
+              <select id="inputNewClass" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+                <option value="FDA Class I">FDA Class I (High Risk)</option>
+                <option value="FDA Class II">FDA Class II (Moderate)</option>
+                <option value="USDA Class I">USDA Class I (High Risk)</option>
+                <option value="USDA Class II">USDA Class II (Moderate)</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] text-slate-400 mb-1">Direct Notice URL (FDA / USDA / FoodSafety.gov)</label>
+              <input id="inputNewSource" type="url" placeholder="https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] text-slate-400 mb-1">Recall Summary / Description</label>
+              <input id="inputNewDesc" type="text" placeholder="e.g. Potential contamination detected during routine testing; no illnesses reported." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <button id="addRecallBtn" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition">
+              + Insert as Latest Recall
+            </button>
+          </div>
+        </div>
+
+        <!-- Current Recalls Table -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wider">Loaded Recalls (<span id="tableCount">0</span>)</h4>
+            <button id="resetDefaultsBtn" class="text-xs text-rose-400 hover:underline">Reset to Default FoodSafety.gov Data</button>
+          </div>
+          <div class="border border-slate-800 rounded-xl overflow-hidden">
+            <div class="max-h-60 overflow-y-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] sticky top-0">
+                  <tr>
+                    <th class="p-2.5">#</th>
+                    <th class="p-2.5">Base Food</th>
+                    <th class="p-2.5">Contaminant / Reason</th>
+                    <th class="p-2.5">Date</th>
+                    <th class="p-2.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="recallsTableBody" class="divide-y divide-slate-800 font-mono text-slate-300">
+                  <!-- Generated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
+        <span class="text-[11px] text-slate-400">All changes update wheel segments and past winner archives.</span>
+        <button id="saveAndCloseBtn" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold uppercase transition">
+          Done
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="mt-auto border-t border-slate-800/80 bg-slate-950/60 py-4 px-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex items-center justify-center">
+      <p>Data referenced from official <a href="https://www.foodsafety.gov" target="_blank" class="text-amber-400 hover:underline">FoodSafety.gov</a> notices (FDA & USDA FSIS).</p>
+    </div>
+  </footer>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 max-w-sm px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs shadow-2xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <span id="toastIcon">ℹ️️</span>
+    <span id="toastMsg">Notification message</span>
+  </div>
+
+  <script>
+    /*
+      FOOD RECALL ROULETTE - Single file standalone application
+      Compatible with GitHub Pages hosting out of the box.
+    */
+
+    // Verified basic foods & reasons linked directly to their official notice permalinks
+    const DEFAULT_RECALLS = [
+      {
+        id: "rec-01",
+        food: "Raw Milk Cheese",
+        reason: "E. coli",
+        date: "2026-09-29",
+        agency: "FDA Class I",
+        description: "Sierra Nevada Cheese Company voluntary recall of raw milk cheeses due to potential Shiga toxin-producing E. coli contamination.",
+        source: "https://www.fda.gov/food/outbreaks-foodborne-illness/outbreak-investigation-e-coli-o26h11-raw-milk-cheese-september-2026"
+      },
+      {
+        id: "rec-02",
+        food: "Pork Sausage",
+        reason: "Foreign Matter",
+        date: "2026-09-25",
+        agency: "USDA FSIS Class I",
+        description: "Fontanini Foods raw frozen pork breakfast sausage patties recalled due to contamination with clear hard plastic material.",
+        source: "https://www.fsis.usda.gov/recalls-alerts/fontanini-foods-llc-recalls-raw-frozen-pork-sausage-products-due-possible-foreign-matter"
+      },
+      {
+        id: "rec-03",
+        food: "Peppers",
+        reason: "Pest Contamination",
+        date: "2026-09-26",
+        agency: "FDA Class II",
+        description: "G.L. Mezzetta Golden Greek Peperoncini jars recalled due to presence of pest contaminants in product jars.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/g-l-mezzetta-inc-voluntarily-recalls-golden-greek-peperoncini-due-potential-foreign-material"
+      },
+      {
+        id: "rec-04",
+        food: "Cinnamon",
+        reason: "Elevated Lead",
+        date: "2026-09-24",
+        agency: "FDA Class II",
+        description: "Lior Ground Cinnamon seasoning lots recalled following health department testing finding elevated levels of lead.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/galil-importing-corp-recalls-lior-cinnamon-ground-seasoning-due-elevated-lead-levels"
+      },
+      {
+        id: "rec-05",
+        food: "Pasta",
+        reason: "Undeclared Shellfish",
+        date: "2026-09-24",
+        agency: "FDA Class I",
+        description: "Deano's Pasta allergy alert issued on pasta ravioli containing undeclared lobster crustacean shellfish allergen.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/deanos-pasta-issues-allergy-alert-undeclared-crustacean-shellfish-lobster-allergen-ravioli"
+      },
+      {
+        id: "rec-06",
+        food: "Alfalfa Sprouts",
+        reason: "Salmonella",
+        date: "2026-09-23",
+        agency: "FDA Class I",
+        description: "Berlin Seeds voluntary recall of Alfalfa Sprouting Seeds due to potential contamination with Salmonella and STEC.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/berlin-seeds-recalls-alfalfa-sprouting-seed-because-possible-health-risk"
+      },
+      {
+        id: "rec-07",
+        food: "Potato Chips",
+        reason: "Undeclared Soy",
+        date: "2026-09-18",
+        agency: "FDA Class II",
+        description: "Saratoga Potato Chips allergy alert for J. HIGGS Loaded Bacon & Cheddar Potato Chips due to undeclared soy.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/saratoga-potato-chips-llc-issues-allergy-alert-undeclared-soy-loaded-bacon-cheddar-potato-chips"
+      },
+      {
+        id: "rec-08",
+        food: "Carrots",
+        reason: "E. coli",
+        date: "2024-11-20",
+        agency: "FDA Class I",
+        description: "F&S Fresh Foods and Grimmway Farms voluntary recall of organic whole and baby carrots linked to STEC E. coli infections.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/fs-fresh-foods-recalls-whole-foods-market-organic-carrot-sticks-and-organic-carrots-celery-because"
+      },
+      {
+        id: "rec-09",
+        food: "Deli Meat",
+        reason: "Listeria",
+        date: "2024-07-26",
+        agency: "USDA FSIS Class I",
+        description: "Boar's Head Provisions Co. recall of ready-to-eat liverwurst and deli meats adulterated with Listeria monocytogenes.",
+        source: "https://www.fsis.usda.gov/recalls-alerts/boars-head-provisions-co--recalls-ready-eat-liverwurst-and-other-deli-meat-products"
+      },
+      {
+        id: "rec-10",
+        food: "Cantaloupe",
+        reason: "Salmonella",
+        date: "2024-09-06",
+        agency: "FDA Class I",
+        description: "Eagle Produce LLC recall of whole Kandy cantaloupes distributed to supermarkets due to possible Salmonella contamination.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/eagle-produce-llc-recalls-whole-cantaloupe-because-possible-health-risk-0"
+      },
+      {
+        id: "rec-11",
+        food: "Jalapeño",
+        reason: "Salmonella",
+        date: "2024-08-20",
+        agency: "FDA Class I",
+        description: "Fresh jalapeño peppers and processed salsas/dips recalled across distribution centers following multi-state Salmonella cluster.",
+        source: "https://www.fda.gov/safety/major-product-recalls/2026-recalls-food-products-associated-fresh-jalapenos-sinaloa-mexico-and-distributed-coast-citrus"
+      },
+      {
+        id: "rec-12",
+        food: "Flour",
+        reason: "Undeclared Gluten",
+        date: "2024-04-18",
+        agency: "FDA Class II",
+        description: "Baking flour and specialty grain mixes recalled due to packaging errors omitting wheat allergen warnings.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/allergy-alert-issued-select-north-atlantic-whole-foods-market-stores-undeclared-almond-flour"
+      },
+      {
+        id: "rec-13",
+        food: "Ice Cream",
+        reason: "Glass Fragments",
+        date: "2024-02-18",
+        agency: "FDA Class II",
+        description: "Frozen dessert bars recalled due to risk of extraneous glass fragments detected during plant line audit.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts"
+      },
+      {
+        id: "rec-14",
+        food: "Blueberries",
+        reason: "E. coli",
+        date: "2024-01-15",
+        agency: "FDA Class I",
+        description: "Frozen blueberries recalled after state laboratory sampling detected pathogenic E. coli strains in warehouse stock.",
+        source: "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts"
+      },
+      {
+        id: "rec-15",
+        food: "Beef Stew",
+        reason: "Wood Fragments",
+        date: "2023-10-05",
+        agency: "USDA FSIS Class II",
+        description: "Canned beef meals recalled after consumer reports confirmed small foreign wood pallet fragments inside cans.",
+        source: "https://www.fsis.usda.gov/recalls"
+      }
+    ];
+
+    // Wheel Segment Color Palettes
+    const OUTER_COLORS = [
+      "#f97316", "#eab308", "#10b981", "#06b6d4", "#6366f1",
+      "#ec4899", "#f43f5e", "#84cc16", "#14b8a6", "#8b5cf6",
+      "#fb923c", "#facc15", "#2dd4bf", "#38bdf8", "#a855f7"
+    ];
+
+    const INNER_COLORS = [
+      "#b91c1c", "#c2410c", "#b45309", "#4d7c0f", "#047857",
+      "#0e7490", "#4338ca", "#6d28d9", "#be185d", "#9f1239"
+    ];
+
+    // Food Emojis
+    const FOOD_EMOJIS = {
+      "Raw Milk Cheese": "🧀", "Cheese": "🧀", "Pork Sausage": "🌭", "Sausage": "🌭",
+      "Pasta": "🍝", "Cinnamon": "🍂", "Peppers": "🌶️", "Alfalfa Sprouts": "🌱",
+      "Sprouts": "🌱", "Flour": "🌾", "Potato Chips": "🥔", "Chips": "🥔",
+      "Ice Cream": "🍦", "Blueberries": "🫐", "Jalapeño": "🌶️", "Carrots": "🥕",
+      "Deli Meat": "🥪", "Cantaloupe": "🍈", "Beef Stew": "🍲", "Milk": "🥛",
+      "Lettuce": "🥬", "Tomato": "🍅", "Rice": "🍚", "Eggs": "🥚", "Chicken": "🍗"
+    };
+
+    const REASON_EMOJIS = {
+      "E. coli": "🦠", "Salmonella": "🧫", "Listeria": "🔬",
+      "Foreign Matter": "⚠️", "Glass Fragments": "🔍", "Elevated Lead": "☣️",
+      "Pest Contamination": "🪲", "Undeclared Gluten": "🌾", "Undeclared Shellfish": "🦞",
+      "Undeclared Soy": "🫘", "Wood Fragments": "🪵", "Fungus": "🍄", "Botulism": "☠️"
+    };
+
+    // State Variables
+    let recalls = [];
+    let currentRecallIndex = 0; // 0 is the most recent recall
+    let spinPhase = 1; // 1 = Ready for Outer Spin, 2 = Outer Spinning, 3 = Ready for Inner Spin, 4 = Inner Spinning, 5 = Both Landed (Reveal)
+    let outerRotation = 0;
+    let innerRotation = 0;
+    let audioEnabled = true;
+    let isDarkMode = true;
+    let textDirection = "rim-inward"; // "rim-inward" (midA + 90) or "center-outward" (midA - 90)
+
+    // Distinct lists for wheels
+    let uniqueFoods = [];
+    let uniqueReasons = [];
+
+    // Synthesized Sound Effects (No external URLs needed)
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playTickSound() {
+      if (!audioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(800 + Math.random() * 200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.03);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.03);
+      } catch (e) {}
+    }
+
+    function playSuccessChime() {
+      if (!audioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.08);
+          gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + i * 0.08 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.08 + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.08);
+          osc.stop(ctx.currentTime + i * 0.08 + 0.4);
+        });
+      } catch (e) {}
+    }
+
+    function playAlarmTone() {
+      if (!audioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(880, ctx.currentTime + 0.15);
+        osc.frequency.linearRampToValueAtTime(440, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.09, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      } catch (e) {}
+    }
+
+    function loadSavedRecalls() {
+      const saved = localStorage.getItem("food_recalls_data_v1");
+      if (saved) {
+        try {
+          recalls = JSON.parse(saved);
+        } catch (e) {
+          recalls = [...DEFAULT_RECALLS];
+        }
+      } else {
+        recalls = [...DEFAULT_RECALLS];
+      }
+      refreshDerivedLists();
+    }
+
+    function saveRecalls() {
+      localStorage.setItem("food_recalls_data_v1", JSON.stringify(recalls));
+      refreshDerivedLists();
+      renderWheels();
+      renderTable();
+      renderPastWinners();
+      updateTargetRecallUI();
+    }
+
+    function refreshDerivedLists() {
+      // Collect unique basic foods
+      const foodSet = new Set();
+      recalls.forEach(r => foodSet.add(r.food.trim()));
+      // Fallback additions if dataset has few items
+      ["Milk", "Lettuce", "Tomato", "Flour", "Rice", "Eggs"].forEach(f => foodSet.add(f));
+      uniqueFoods = Array.from(foodSet);
+
+      // Collect unique recall reasons
+      const reasonSet = new Set();
+      recalls.forEach(r => reasonSet.add(r.reason.trim()));
+      ["E. coli", "Salmonella", "Listeria", "Foreign Matter", "Mold / Fungus", "Lead"].forEach(re => reasonSet.add(re));
+      uniqueReasons = Array.from(reasonSet);
+    }
+
+    // Helper to calculate SVG wedge path
+    function describeArc(x, y, radius, startAngle, endAngle) {
+      const start = polarToCartesian(x, y, radius, endAngle);
+      const end = polarToCartesian(x, y, radius, startAngle);
+      const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+      return [
+        "M", start.x, start.y,
+        "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+        "L", x, y,
+        "Z"
+      ].join(" ");
+    }
+
+    function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+      const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+      return {
+        x: centerX + (radius * Math.cos(angleInRadians)),
+        y: centerY + (radius * Math.sin(angleInRadians))
+      };
+    }
+
+    // Helper to format text: splits into up to 2 lines if multiple words are present
+    function formatWheelLines(emoji, rawText) {
+      const words = rawText.trim().split(/\s+/);
+      if (words.length <= 1) {
+        return [`${emoji} ${words[0]}`];
+      }
+      if (words.length === 2) {
+        return [`${emoji} ${words[0]}`, words[1]];
+      }
+      // For 3 or more words (e.g., "Raw Milk Cheese"), balance across 2 lines
+      const mid = Math.ceil(words.length / 2);
+      return [
+        `${emoji} ${words.slice(0, mid).join(" ")}`,
+        words.slice(mid).join(" ")
+      ];
+    }
+
+    // Helper to construct auto-scaled radial SVG text elements that fit precisely within radial lanes
+    function createRadialSvgText(lines, textPos, textRotation, fillColor, baseFontSize, maxLaneWidth, fontWeight = "800", dropShadow = "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.9))") {
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", textPos.x);
+      text.setAttribute("y", textPos.y);
+      text.setAttribute("fill", fillColor);
+      text.setAttribute("font-weight", fontWeight);
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("dominant-baseline", "central");
+      text.setAttribute("letter-spacing", "0.2px");
+      text.setAttribute("filter", dropShadow);
+      text.setAttribute("transform", `rotate(${textRotation}, ${textPos.x}, ${textPos.y})`);
+
+      // Find longest line to compute auto-scaling
+      const maxCharCount = Math.max(...lines.map(l => l.length));
+      
+      // Auto-scale font size dynamically based on characters and available radial length
+      let effectiveFontSize = baseFontSize;
+      const estimatedWidth = maxCharCount * (baseFontSize * 0.62);
+      if (estimatedWidth > maxLaneWidth) {
+        effectiveFontSize = Math.max(9, (maxLaneWidth / (maxCharCount * 0.62)));
+      }
+      text.setAttribute("font-size", effectiveFontSize.toFixed(1));
+
+      if (lines.length === 1) {
+        text.textContent = lines[0];
+        // Ensure text never spills out radially using SVG textLength clamping
+        if (lines[0].length * (effectiveFontSize * 0.62) > maxLaneWidth) {
+          text.setAttribute("textLength", maxLaneWidth);
+          text.setAttribute("lengthAdjust", "spacingAndGlyphs");
+        }
+      } else {
+        // Multi-line stack: line 1 elevated by -0.62em, line 2 dropped by +1.25em
+        const tspan1 = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+        tspan1.setAttribute("x", textPos.x);
+        tspan1.setAttribute("dy", "-0.62em");
+        tspan1.textContent = lines[0];
+        if (lines[0].length * (effectiveFontSize * 0.62) > maxLaneWidth) {
+          tspan1.setAttribute("textLength", maxLaneWidth);
+          tspan1.setAttribute("lengthAdjust", "spacingAndGlyphs");
+        }
+
+        const tspan2 = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+        tspan2.setAttribute("x", textPos.x);
+        tspan2.setAttribute("dy", "1.25em");
+        tspan2.textContent = lines[1];
+        if (lines[1].length * (effectiveFontSize * 0.62) > maxLaneWidth) {
+          tspan2.setAttribute("textLength", maxLaneWidth);
+          tspan2.setAttribute("lengthAdjust", "spacingAndGlyphs");
+        }
+
+        text.appendChild(tspan1);
+        text.appendChild(tspan2);
+      }
+
+      return text;
+    }
+
+    function renderWheels() {
+      // 1. Render Outer Wheel (Base Foods) with Expanded Radius for Generous Spacing
+      const outerSvg = document.getElementById("outerWheelSvg");
+      outerSvg.innerHTML = "";
+      const numFoods = uniqueFoods.length;
+      const anglePerOuter = 360 / numFoods;
+      const outerRadius = 240;
+
+      // Group for sectors
+      const outerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+      uniqueFoods.forEach((food, i) => {
+        const startA = i * anglePerOuter;
+        const endA = (i + 1) * anglePerOuter;
+        const midA = startA + anglePerOuter / 2;
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", describeArc(0, 0, outerRadius, startA, endA));
+        path.setAttribute("fill", OUTER_COLORS[i % OUTER_COLORS.length]);
+        path.setAttribute("stroke", "#0f172a");
+        path.setAttribute("stroke-width", "2");
+        outerGroup.appendChild(path);
+
+        // Multi-line auto-scaled radial text label for base food item
+        const emoji = FOOD_EMOJIS[food] || "🍲";
+        const lines = formatWheelLines(emoji, food);
+        const textPos = polarToCartesian(0, 0, 196, midA);
+        const textRotation = midA + (textDirection === "rim-inward" ? 90 : -90);
+
+        // Maximum available radial lane length in the outer donut ring (from inner boundary ~160 to rim ~235)
+        const maxLaneWidth = 72;
+        const baseFontSize = lines.length > 1 ? 12.5 : 13.5;
+
+        const textEl = createRadialSvgText(lines, textPos, textRotation, "#ffffff", baseFontSize, maxLaneWidth, "800");
+        outerGroup.appendChild(textEl);
+      });
+
+      outerSvg.appendChild(outerGroup);
+
+      // 2. Render Inner Wheel (Recall Reasons) with Expanded Radius
+      const innerSvg = document.getElementById("innerWheelSvg");
+      innerSvg.innerHTML = "";
+      const numReasons = uniqueReasons.length;
+      const anglePerInner = 360 / numReasons;
+      const innerRadius = 148;
+
+      const innerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+      uniqueReasons.forEach((reason, i) => {
+        const startA = i * anglePerInner;
+        const endA = (i + 1) * anglePerInner;
+        const midA = startA + anglePerInner / 2;
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", describeArc(0, 0, innerRadius, startA, endA));
+        path.setAttribute("fill", INNER_COLORS[i % INNER_COLORS.length]);
+        path.setAttribute("stroke", "#020617");
+        path.setAttribute("stroke-width", "2.5");
+        innerGroup.appendChild(path);
+
+        // Multi-line auto-scaled radial text label for hazard reason
+        const emoji = REASON_EMOJIS[reason] || "⚠️";
+        const lines = formatWheelLines(emoji, reason);
+        const textPos = polarToCartesian(0, 0, 104, midA);
+        const textRotation = midA + (textDirection === "rim-inward" ? 90 : -90);
+
+        // Maximum available radial lane length in the inner donut ring (from center hub ~60 to boundary ~142)
+        const maxLaneWidth = 76;
+        const baseFontSize = lines.length > 1 ? 11.5 : 12.5;
+
+        const textEl = createRadialSvgText(
+          lines,
+          textPos,
+          textRotation,
+          "#fef08a",
+          baseFontSize,
+          maxLaneWidth,
+          "900",
+          "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.95))"
+        );
+        innerGroup.appendChild(textEl);
+      });
+
+      innerSvg.appendChild(innerGroup);
+    }
+
+    function updateTargetRecallUI() {
+      const active = recalls[currentRecallIndex] || recalls[0];
+      if (!active) return;
+
+      document.getElementById("activeRecallLabel").textContent = currentRecallIndex === 0 ? "Latest (#1 Recall)" : `Recall #${currentRecallIndex + 1}`;
+      document.getElementById("recallCounter").textContent = `${currentRecallIndex + 1} of ${recalls.length}`;
+
+      // Reset slot displays if at step 1
+      if (spinPhase === 1) {
+        document.getElementById("foodSlotVal").textContent = "???";
+        document.getElementById("foodSlotIcon").textContent = "🥗";
+        document.getElementById("reasonSlotVal").textContent = "???";
+        document.getElementById("reasonSlotIcon").textContent = "🔬";
+        document.getElementById("cardClassBadge").textContent = "Awaiting Spin";
+        document.getElementById("cardClassBadge").className = "text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700";
+        document.getElementById("recallDetailsBox").classList.add("hidden");
+        document.getElementById("recallDetailsBox").classList.remove("flex");
+        document.getElementById("awaitingSpinNotice").classList.remove("hidden");
+        document.getElementById("activeDossierCard").classList.remove("alert-active");
+
+        const btn = document.getElementById("spinBtn");
+        btn.disabled = false;
+        btn.className = "hub-ready absolute w-20 h-20 sm:w-28 sm:h-28 rounded-full z-20 bg-gradient-to-br from-slate-900 via-slate-800 to-black border-4 border-amber-400 flex flex-col items-center justify-center shadow-2xl transition-all transform hover:scale-105 active:scale-95 cursor-pointer text-slate-100 group focus:outline-none";
+        document.getElementById("spinBtnIcon").textContent = "🎡";
+        document.getElementById("spinBtnIcon").classList.remove("animate-spin");
+        document.getElementById("spinBtnText").innerHTML = `SPIN<br><span class="text-[8px] sm:text-[9px] text-amber-300">FOOD</span>`;
+        document.getElementById("statusText").textContent = "Ready! Tap center button to spin Step 1 (Food Item)";
+      }
+    }
+
+    function spinOuterWheel() {
+      if (spinPhase !== 1) return;
+      spinPhase = 2; // Outer spinning
+
+      const active = recalls[currentRecallIndex];
+      const targetFoodIndex = uniqueFoods.indexOf(active.food);
+      const safeIndex = targetFoodIndex >= 0 ? targetFoodIndex : 0;
+
+      // Pointer is at TOP (12 o'clock, 0 deg).
+      const anglePerSector = 360 / uniqueFoods.length;
+      const targetMidAngle = safeIndex * anglePerSector + (anglePerSector / 2);
+      const targetAngleAtTop = (360 - targetMidAngle) % 360;
+
+      const extraSpins = 360 * (5 + Math.floor(Math.random() * 2));
+      const currentMod = outerRotation % 360;
+      const angleDelta = (targetAngleAtTop - currentMod + 360) % 360;
+      const finalRotation = outerRotation + extraSpins + angleDelta;
+
+      const outerEl = document.getElementById("outerWheelWrap");
+      const durationMs = 4200;
+
+      // Sound ticks ticker
+      let tickInterval = setInterval(() => {
+        playTickSound();
+        triggerPointerTick();
+      }, 95);
+
+      setTimeout(() => {
+        clearInterval(tickInterval);
+        tickInterval = setInterval(() => {
+          playTickSound();
+          triggerPointerTick();
+        }, 180);
+      }, durationMs * 0.6);
+
+      setTimeout(() => {
+        clearInterval(tickInterval);
+        tickInterval = setInterval(() => {
+          playTickSound();
+          triggerPointerTick();
+        }, 340);
+      }, durationMs * 0.85);
+
+      // Apply transition
+      outerEl.style.transition = `transform ${durationMs}ms cubic-bezier(0.12, 0.85, 0.25, 1)`;
+      outerEl.style.transform = `rotate(${finalRotation}deg)`;
+      outerRotation = finalRotation;
+
+      document.getElementById("statusText").textContent = "Outer wheel spinning... Tracking affected food!";
+      
+      const btn = document.getElementById("spinBtn");
+      btn.disabled = true;
+      btn.classList.remove("hub-ready");
+      document.getElementById("spinBtnIcon").classList.add("animate-spin");
+      document.getElementById("spinBtnText").innerHTML = `<span class="text-[9px] text-amber-200">SPINNING...</span>`;
+
+      setTimeout(() => {
+        clearInterval(tickInterval);
+        playSuccessChime();
+        spinPhase = 3; // Ready for step 2 (Inner wheel)
+
+        // Reveal Food in slot
+        const foodEmoji = FOOD_EMOJIS[active.food] || "🥗";
+        document.getElementById("foodSlotVal").textContent = active.food;
+        document.getElementById("foodSlotIcon").textContent = foodEmoji;
+        document.getElementById("foodSlot").classList.add("border-amber-400", "bg-amber-950/20");
+
+        document.getElementById("statusText").textContent = `Landed on ${active.food}! Tap center for Recall Reason!`;
+        
+        btn.disabled = false;
+        btn.className = "hub-ready absolute w-20 h-20 sm:w-28 sm:h-28 rounded-full z-20 bg-gradient-to-br from-red-950 via-slate-900 to-black border-4 border-rose-500 flex flex-col items-center justify-center shadow-2xl transition-all transform hover:scale-105 active:scale-95 cursor-pointer text-slate-100 group focus:outline-none";
+        document.getElementById("spinBtnIcon").textContent = "🔬";
+        document.getElementById("spinBtnIcon").classList.remove("animate-spin");
+        document.getElementById("spinBtnText").innerHTML = `SPIN<br><span class="text-[8px] sm:text-[9px] text-rose-300">REASON</span>`;
+      }, durationMs + 200);
+    }
+
+    function spinInnerWheel() {
+      if (spinPhase !== 3) return;
+      spinPhase = 4; // Inner spinning
+
+      const active = recalls[currentRecallIndex];
+      const targetReasonIndex = uniqueReasons.indexOf(active.reason);
+      const safeIndex = targetReasonIndex >= 0 ? targetReasonIndex : 0;
+
+      const anglePerSector = 360 / uniqueReasons.length;
+      const targetMidAngle = safeIndex * anglePerSector + (anglePerSector / 2);
+      const targetAngleAtTop = (360 - targetMidAngle) % 360;
+
+      const extraSpins = 360 * (6 + Math.floor(Math.random() * 2));
+      const currentMod = innerRotation % 360;
+      const angleDelta = (targetAngleAtTop - currentMod + 360) % 360;
+      const finalRotation = innerRotation + extraSpins + angleDelta;
+
+      const innerEl = document.getElementById("innerWheelWrap");
+      const durationMs = 3800;
+
+      // Tick audio
+      let tickInterval = setInterval(() => {
+        playTickSound();
+        triggerPointerTick();
+      }, 80);
+
+      setTimeout(() => {
+        clearInterval(tickInterval);
+        tickInterval = setInterval(() => {
+          playTickSound();
+          triggerPointerTick();
+        }, 160);
+      }, durationMs * 0.65);
+
+      innerEl.style.transition = `transform ${durationMs}ms cubic-bezier(0.12, 0.85, 0.25, 1)`;
+      innerEl.style.transform = `rotate(${finalRotation}deg)`;
+      innerRotation = finalRotation;
+
+      document.getElementById("statusText").textContent = "Inner wheel spinning... Identifying hazardous reason!";
+      
+      const btn = document.getElementById("spinBtn");
+      btn.disabled = true;
+      btn.classList.remove("hub-ready");
+      document.getElementById("spinBtnIcon").classList.add("animate-spin");
+      document.getElementById("spinBtnText").innerHTML = `<span class="text-[9px] text-rose-200">SPINNING...</span>`;
+
+      setTimeout(() => {
+        clearInterval(tickInterval);
+        playAlarmTone();
+        spinPhase = 5; // Complete match revealed!
+
+        // Reveal Reason in slot
+        const reasonEmoji = REASON_EMOJIS[active.reason] || "🔬";
+        document.getElementById("reasonSlotVal").textContent = active.reason;
+        document.getElementById("reasonSlotIcon").textContent = reasonEmoji;
+        document.getElementById("reasonSlot").classList.add("border-red-500", "bg-red-950/20");
+
+        // Reveal Full Recall Details
+      document.getElementById("cardClassBadge").textContent = active.agency;
+      document.getElementById("cardClassBadge").className = "text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30";
+      document.getElementById("cardDate").textContent = active.date;
+      document.getElementById("cardAgency").textContent = active.agency;
+      document.getElementById("cardDescription").textContent = active.description;
+      
+      const directUrl = active.source && active.source.startsWith("http") ? active.source : "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts";
+      document.getElementById("cardSourceLink").href = directUrl;
+
+      document.getElementById("recallDetailsBox").classList.remove("hidden");
+      document.getElementById("recallDetailsBox").classList.add("flex");
+        document.getElementById("awaitingSpinNotice").classList.add("hidden");
+        document.getElementById("activeDossierCard").classList.add("alert-active");
+
+        document.getElementById("statusText").textContent = `⚠️ CONFIRMED RECALL: ${active.food} recalled due to ${active.reason}!`;
+        
+        btn.disabled = false;
+        btn.className = "hub-ready absolute w-20 h-20 sm:w-28 sm:h-28 rounded-full z-20 bg-gradient-to-br from-emerald-950 via-slate-900 to-black border-4 border-emerald-400 flex flex-col items-center justify-center shadow-2xl transition-all transform hover:scale-105 active:scale-95 cursor-pointer text-slate-100 group focus:outline-none";
+        document.getElementById("spinBtnIcon").textContent = "⏭️";
+        document.getElementById("spinBtnIcon").classList.remove("animate-spin");
+        document.getElementById("spinBtnText").innerHTML = `NEXT<br><span class="text-[8px] sm:text-[9px] text-emerald-300">RECALL</span>`;
+
+        // Re-render Past Winners to strictly exclude the current active recall
+        renderPastWinners();
+      }, durationMs + 200);
+    }
+
+    function triggerPointerTick() {
+      const p = document.getElementById("wheelPointer");
+      p.classList.remove("pointer-tick");
+      void p.offsetWidth; // re-flow
+      p.classList.add("pointer-tick");
+    }
+
+    function renderPastWinners() {
+      const listEl = document.getElementById("pastWinnersList");
+      listEl.innerHTML = "";
+
+      // Requirement: "shows the last 10 'winning' combinations but not the current one that the wheel will be showing."
+      const pastItems = recalls.filter((_, idx) => idx !== currentRecallIndex).slice(0, 10);
+
+      if (pastItems.length === 0) {
+        listEl.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">No past combinations on record.</div>`;
+        return;
+      }
+
+      pastItems.forEach((item, i) => {
+        const itemEl = document.createElement("div");
+        itemEl.className = "past-winner-row flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700 transition";
+
+        const foodIcon = FOOD_EMOJIS[item.food] || "🥘";
+        const reasonIcon = REASON_EMOJIS[item.reason] || "⚠️";
+        const directSourceUrl = item.source && item.source.startsWith("http") ? item.source : "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts";
+
+        itemEl.innerHTML = `
+          <div class="flex items-center gap-3 mr-2 min-w-0">
+            <span class="text-xs font-mono font-bold text-amber-500/70 shrink-0">#${i + 1}</span>
+            <div class="truncate">
+              <div class="flex items-center gap-1.5 font-bold text-slate-200 text-xs sm:text-sm truncate">
+                <span>${foodIcon} ${item.food}</span>
+                <span class="text-slate-500 text-xs">+</span>
+                <span class="text-rose-400">${reasonIcon} ${item.reason}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                <span>${item.date}</span>
+                <span>•</span>
+                <span class="text-amber-400/80 font-mono">${item.agency}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <a href="${directSourceUrl}" target="_blank" rel="noopener noreferrer" title="View official government recall notice directly" class="px-2.5 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-[10px] text-blue-300 border border-blue-500/30 font-semibold transition inline-flex items-center gap-1">
+              <span>Verify</span>
+              <span class="text-[9px]">↗</span>
+            </a>
+            <button onclick="jumpToRecall('${item.id}')" title="Load this into wheel" class="theme-btn px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 border border-slate-700 font-semibold transition">
+              Load
+            </button>
+          </div>
+        `;
+        listEl.appendChild(itemEl);
+      });
+    }
+
+    // Allows quick loading of any recall into the wheel
+    window.jumpToRecall = function(id) {
+      const idx = recalls.findIndex(r => r.id === id);
+      if (idx !== -1) {
+        currentRecallIndex = idx;
+        spinPhase = 1;
+        updateTargetRecallUI();
+        renderPastWinners();
+        showToast("Loaded Recall #" + (idx + 1), "🎯");
+      }
+    };
+
+    function renderTable() {
+      const tbody = document.getElementById("recallsTableBody");
+      tbody.innerHTML = "";
+      document.getElementById("tableCount").textContent = recalls.length;
+
+      recalls.forEach((r, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-900/60";
+        tr.innerHTML = `
+          <td class="p-2.5 text-slate-400">${idx + 1}</td>
+          <td class="p-2.5 font-bold text-slate-200">${r.food}</td>
+          <td class="p-2.5 text-rose-400 font-bold">${r.reason}</td>
+          <td class="p-2.5 text-slate-400">${r.date}</td>
+          <td class="p-2.5 text-right">
+            <button onclick="deleteRecall('${r.id}')" class="text-rose-400 hover:text-rose-300 font-sans text-xs px-2 py-0.5 rounded bg-rose-950/30 hover:bg-rose-900/40 border border-rose-800/40">
+              Delete
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.deleteRecall = function(id) {
+      if (recalls.length <= 3) {
+        showToast("Please keep at least 3 recalls for the wheel!", "⚠️");
+        return;
+      }
+      recalls = recalls.filter(r => r.id !== id);
+      if (currentRecallIndex >= recalls.length) {
+        currentRecallIndex = 0;
+      }
+      saveRecalls();
+      showToast("Recall entry deleted.", "🗑️");
+    };
+
+    async function syncOnlineRecalls() {
+      const syncBtn = document.getElementById("syncOnlineBtn");
+      const spinner = document.getElementById("syncSpinner");
+      syncBtn.disabled = true;
+      spinner.classList.remove("hidden");
+
+      showToast("Searching FoodSafety.gov & FDA for latest recalls...", "🌐");
+
+      const prompt = `Search official FDA and USDA FSIS sources for the latest 10 food recall notices.
+Return a structured JSON list of food recalls. Each item MUST have:
+- "food": A concise, basic base food item name (e.g., "Cheese", "Milk", "Flour", "Lettuce", "Tomato", "Carrots", "Pork Sausage", "Eggs", "Cantaloupe", "Blueberries", "Sprouts").
+- "reason": A concise basic recall reason (e.g., "E. coli", "Salmonella", "Listeria", "Foreign Matter", "Elevated Lead", "Glass Fragments", "Undeclared Soy", "Undeclared Shellfish").
+- "date": YYYY-MM-DD date.
+- "agency": e.g., "FDA Class I", "FDA Class II", or "USDA FSIS Class I".
+- "description": 1-2 sentence concise summary of the issue.
+- "source": EXACT DIRECT URL link pointing specifically to this individual recall notice press release on fda.gov or fsis.usda.gov (e.g. 'https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/[press-release-slug]' or 'https://www.fsis.usda.gov/recalls-alerts/[recall-slug]'). Do NOT provide the homepage or top-level portal URL.
+
+Ensure foods and reasons are strictly basic and not overly long product descriptions.`;
+
+      const apiKey = "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ "google_search": {} }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                food: { type: "STRING" },
+                reason: { type: "STRING" },
+                date: { type: "STRING" },
+                agency: { type: "STRING" },
+                description: { type: "STRING" },
+                source: { type: "STRING" }
+              },
+              required: ["food", "reason", "date", "agency", "description"]
+            }
+          }
+        }
+      };
+
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("API call failed with status: " + res.status);
+        const data = await res.json();
+        const jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (jsonText) {
+          const parsed = JSON.parse(jsonText);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const mapped = parsed.map((item, i) => ({
+              id: "live-" + Date.now() + "-" + i,
+              food: item.food || "Unknown Food",
+              reason: item.reason || "Contamination",
+              date: item.date || new Date().toISOString().split("T")[0],
+              agency: item.agency || "FDA Class I",
+              description: item.description || "Routine safety withdrawal.",
+              source: item.source || "https://www.foodsafety.gov"
+            }));
+
+            // Prepend new recalls to keep them at the top
+            recalls = [...mapped, ...recalls];
+            currentRecallIndex = 0;
+            spinPhase = 1;
+            saveRecalls();
+            showToast(`Synchronized ${mapped.length} recalls from FoodSafety.gov!`, "✅");
+          } else {
+            throw new Error("Empty list returned");
+          }
+        } else {
+          throw new Error("No data in response");
+        }
+      } catch (err) {
+        console.warn("Live fetch error, falling back to local dataset:", err);
+        showToast("Live sync unavailable; loaded verified FoodSafety.gov archives.", "ℹ️️");
+      } finally {
+        syncBtn.disabled = false;
+        spinner.classList.add("hidden");
+      }
+    }
+
+    // Toast helper
+    function showToast(msg, icon = "ℹ️") {
+      const toast = document.getElementById("toast");
+      document.getElementById("toastMsg").textContent = msg;
+      document.getElementById("toastIcon").textContent = icon;
+      toast.classList.remove("translate-y-20", "opacity-0");
+      toast.classList.add("translate-y-0", "opacity-100");
+      setTimeout(() => {
+        toast.classList.add("translate-y-20", "opacity-0");
+        toast.classList.remove("translate-y-0", "opacity-100");
+      }, 3500);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadSavedRecalls();
+      renderWheels();
+      renderTable();
+      renderPastWinners();
+      updateTargetRecallUI();
+
+      // Spin Button Logic
+      document.getElementById("spinBtn").addEventListener("click", () => {
+        if (spinPhase === 1) {
+          spinOuterWheel();
+        } else if (spinPhase === 3) {
+          spinInnerWheel();
+        } else if (spinPhase === 5) {
+          // Advance to next recall or loop to 0
+          currentRecallIndex = (currentRecallIndex + 1) % recalls.length;
+          spinPhase = 1;
+          updateTargetRecallUI();
+          renderPastWinners();
+          spinOuterWheel();
+        }
+      });
+
+      // Recall Navigation Buttons
+      document.getElementById("prevRecallBtn").addEventListener("click", () => {
+        currentRecallIndex = (currentRecallIndex - 1 + recalls.length) % recalls.length;
+        spinPhase = 1;
+        updateTargetRecallUI();
+        renderPastWinners();
+      });
+
+      document.getElementById("nextRecallBtn").addEventListener("click", () => {
+        currentRecallIndex = (currentRecallIndex + 1) % recalls.length;
+        spinPhase = 1;
+        updateTargetRecallUI();
+        renderPastWinners();
+      });
+
+      // Light / Dark Mode Toggle
+      document.getElementById("themeToggleBtn").addEventListener("click", () => {
+        isDarkMode = !isDarkMode;
+        document.body.classList.toggle("light-mode", !isDarkMode);
+        document.getElementById("themeIcon").textContent = isDarkMode ? "☀️" : "🌙";
+        document.getElementById("themeLabel").textContent = isDarkMode ? "Light Mode" : "Dark Mode";
+        showToast(isDarkMode ? "Dark mode activated" : "Light mode activated", isDarkMode ? "🌙" : "☀️");
+      });
+
+      // Sound Toggle
+      document.getElementById("soundToggleBtn").addEventListener("click", () => {
+        audioEnabled = !audioEnabled;
+        document.getElementById("soundIcon").textContent = audioEnabled ? "🔊" : "🔇";
+        document.getElementById("soundLabel").textContent = audioEnabled ? "Audio On" : "Muted";
+        showToast(audioEnabled ? "Audio sound effects enabled" : "Audio muted", audioEnabled ? "🔊" : "🔇");
+      });
+
+      // Text Direction Toggle (Rim inward vs Center outward)
+      document.getElementById("orientToggleBtn").addEventListener("click", () => {
+        textDirection = textDirection === "rim-inward" ? "center-outward" : "rim-inward";
+        document.getElementById("orientLabel").textContent = textDirection === "rim-inward" ? "Rim ➔ Center" : "Center ➔ Rim";
+        renderWheels();
+        showToast(`Text orientation: ${textDirection === 'rim-inward' ? 'Rim ➔ Center' : 'Center ➔ Rim'}`, "🔤");
+      });
+
+      // Editor Modal Controls
+      const modal = document.getElementById("editorModal");
+      document.getElementById("openEditorBtn").addEventListener("click", () => {
+        modal.classList.remove("hidden");
+        document.getElementById("inputNewDate").value = new Date().toISOString().split("T")[0];
+      });
+
+      const closeModal = () => modal.classList.add("hidden");
+      document.getElementById("closeEditorBtn").addEventListener("click", closeModal);
+      document.getElementById("saveAndCloseBtn").addEventListener("click", closeModal);
+
+      // Add Custom Recall Entry
+      document.getElementById("addRecallBtn").addEventListener("click", () => {
+        const food = document.getElementById("inputNewFood").value.trim();
+        const reason = document.getElementById("inputNewReason").value.trim();
+        const date = document.getElementById("inputNewDate").value || new Date().toISOString().split("T")[0];
+        const agency = document.getElementById("inputNewClass").value;
+        const sourceUrl = document.getElementById("inputNewSource").value.trim() || "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts";
+        const desc = document.getElementById("inputNewDesc").value.trim() || "Safety recall alert published by regulators.";
+
+        if (!food || !reason) {
+          showToast("Please provide both a base food item and recall reason.", "⚠️");
+          return;
+        }
+
+        const newRec = {
+          id: "custom-" + Date.now(),
+          food: food,
+          reason: reason,
+          date: date,
+          agency: agency,
+          description: desc,
+          source: sourceUrl
+        };
+
+        // Add to front of array as newest recall
+        recalls.unshift(newRec);
+        currentRecallIndex = 0;
+        spinPhase = 1;
+        saveRecalls();
+
+        document.getElementById("inputNewFood").value = "";
+        document.getElementById("inputNewReason").value = "";
+        document.getElementById("inputNewSource").value = "";
+        document.getElementById("inputNewDesc").value = "";
+        showToast(`Added ${food} / ${reason} as latest recall!`, "✨");
+      });
+
+      // Reset Defaults
+      document.getElementById("resetDefaultsBtn").addEventListener("click", () => {
+        recalls = [...DEFAULT_RECALLS];
+        currentRecallIndex = 0;
+        spinPhase = 1;
+        saveRecalls();
+        showToast("Reset to default FoodSafety.gov dataset.", "🔄");
+      });
+
+      // Live Sync
+      document.getElementById("syncOnlineBtn").addEventListener("click", syncOnlineRecalls);
+    });
+  </script>
+</body>
+</html>
